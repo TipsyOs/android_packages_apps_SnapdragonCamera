@@ -1562,20 +1562,12 @@ public class VideoModule implements CameraModule,
         if (mCaptureTimeLapse) {
             double fps = 1000 / (double) mTimeBetweenTimeLapseFrameCaptureMs;
             setCaptureRate(mMediaRecorder, fps);
-        } else if (captureRate > 0) {
+        } else if (isHSR && captureRate > 0) {
             Log.i(TAG, "Setting capture-rate = " + captureRate);
             mMediaRecorder.setCaptureRate(captureRate);
-            // for HFR, encoder's target-framerate = capture-rate
-            if (isHSR) {
-                Log.i(TAG, "Setting fps = " + captureRate + " for HSR");
-                mMediaRecorder.setVideoFrameRate(captureRate);
-            }
-            // for HFR, encoder's taget-framerate = 30fps (from profile)
-            if (isHFR) {
-                Log.i(TAG, "Setting fps = 30 for HFR");
-                mMediaRecorder.setVideoFrameRate(30);
-            }
-            // TODO : bitrate correction..check with google
+            // for HSR, encoder's target-framerate = capture-rate
+            Log.i(TAG, "Setting fps = " + captureRate + " for HSR");
+            mMediaRecorder.setVideoFrameRate(captureRate);
         }
 
         setRecordLocation();
@@ -2504,17 +2496,24 @@ public class VideoModule implements CameraModule,
 
         // Set touch-focus duration
         String touchFocusDuration = mPreferences.getString(
-                CameraSettings.KEY_TOUCH_FOCUS_DURATION, null);
-        if (touchFocusDuration != null) {
-            if (touchFocusDuration.equals("0")) {
-                mFocusManager.setTouchFocusDuration(0x7FFFFFFF);
-            } else if (touchFocusDuration.equals("3")) {
-                mFocusManager.setTouchFocusDuration(3000);
-            } else if (touchFocusDuration.equals("5")) {
-                mFocusManager.setTouchFocusDuration(5000);
-            } else if (touchFocusDuration.equals("10")) {
-                mFocusManager.setTouchFocusDuration(10000);
-            }
+                CameraSettings.KEY_VIDEO_TOUCH_FOCUS_DURATION,
+                mActivity.getString(R.string.pref_video_touchfocus_duration_default));
+        if (touchFocusDuration.equals("0")) {
+            mFocusManager.setTouchFocusDuration(200);
+        } else if (touchFocusDuration.equals("3")) {
+            mFocusManager.setTouchFocusDuration(3000);
+        } else if (touchFocusDuration.equals("5")) {
+            mFocusManager.setTouchFocusDuration(5000);
+        } else if (touchFocusDuration.equals("10")) {
+            mFocusManager.setTouchFocusDuration(10000);
+        } else if (touchFocusDuration.equals("0x7FFFFFFF")) {
+            mFocusManager.setTouchFocusDuration(0x7FFFFFFF);
+        }
+
+        if (touchFocusDuration.equals("0")) {
+            mFocusManager.setTouchFocusAeLock(false);
+        } else {
+            mFocusManager.setTouchFocusAeLock(true);
         }
     }
 
