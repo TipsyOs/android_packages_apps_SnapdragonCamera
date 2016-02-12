@@ -1119,6 +1119,11 @@ public class VideoModule implements CameraModule,
     @Override
     public void onResumeBeforeSuper() {
         mPaused = false;
+        mPreferences = new ComboPreferences(mActivity);
+        CameraSettings.upgradeGlobalPreferences(mPreferences.getGlobal(), mActivity);
+        mCameraId = getPreferredCameraId(mPreferences);
+        mPreferences.setLocalId(mActivity, mCameraId);
+        CameraSettings.upgradeLocalPreferences(mPreferences.getLocal());
     }
 
     @Override
@@ -1126,6 +1131,7 @@ public class VideoModule implements CameraModule,
         mUI.enableShutter(false);
         mZoomValue = 0;
 
+        initializeVideoControl();
         showVideoSnapshotUI(false);
 
         if (!mPreviewing) {
@@ -1144,7 +1150,7 @@ public class VideoModule implements CameraModule,
         mUI.initDisplayChangeListener();
         // Initializing it here after the preview is started.
         mUI.initializeZoom(mParameters);
-
+        mUI.setSwitcherIndex();
         keepScreenOnAwhile();
 
         mOrientationManager.resume();
@@ -1562,12 +1568,6 @@ public class VideoModule implements CameraModule,
         if (mCaptureTimeLapse) {
             double fps = 1000 / (double) mTimeBetweenTimeLapseFrameCaptureMs;
             setCaptureRate(mMediaRecorder, fps);
-        } else if (isHSR && captureRate > 0) {
-            Log.i(TAG, "Setting capture-rate = " + captureRate);
-            mMediaRecorder.setCaptureRate(captureRate);
-            // for HSR, encoder's target-framerate = capture-rate
-            Log.i(TAG, "Setting fps = " + captureRate + " for HSR");
-            mMediaRecorder.setVideoFrameRate(captureRate);
         }
 
         setRecordLocation();
